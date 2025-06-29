@@ -1,7 +1,8 @@
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
 from booking_enum.amount_status_enum import AmountStatusEnum
+from booking_enum.booking_status_enum import BookingStatusEnum
 from dataclass.booking_record import BookingRecord
 from util.google_sheet.google_sheet_client import GoogleSheetClient
 
@@ -109,7 +110,38 @@ class GoogleSheetService:
             is_active=row[9]
         )
 
-    def find_row_number_by_id(self, record_id: str) -> int:
+    def get_row_by_id(self, record_id: str) -> Optional[BookingRecord]:
+        """
+        Fetch a row by the given booking ID (e.g., 'VS001').
+        Returns a BookingRecord object or None if not found.
+        """
+        all_rows = self.sheet.get_all_values()
+
+        headers = all_rows[0]
+        id_index = headers.index("id")
+
+        for row in all_rows[1:]:
+            if len(row) > id_index and row[id_index] == record_id:
+                row_data = dict(zip(headers, row))
+
+                # Parse enums and bools properly
+                return BookingRecord(
+                    id=row_data.get("id"),
+                    product_code=row_data.get("product_code") or None,
+                    product_name=row_data.get("product_name") or None,
+                    booking_status=BookingStatusEnum(row_data["booking_status"]) if row_data.get("booking_status") else None,
+                    booking_date=row_data.get("booking_date") or None,
+                    start_date=row_data.get("start_date") or None,
+                    end_date=row_data.get("end_date") or None,
+                    amount=row_data.get("amount") or None,
+                    amount_status=AmountStatusEnum(row_data["amount_status"]) if row_data.get("amount_status") else None,
+                    is_active=row_data.get("is_active", "True").lower() == "true"
+                )
+
+        return None
+
+    
+    def find_row_by_id(self, record_id: str) -> int:
         column = self.sheet.col_values(1)
         for index, value in enumerate(column, start=1):
             if value == record_id:
