@@ -168,6 +168,16 @@ class GoogleSheetService:
     def delete_row_by_id(self, record_id: str) -> None:
         row_number = self.find_row_number_by_id(record_id)
         self.sheet.update_cell(row_number, self.HEADERS.index("is_active") + 1, "false")
+    
+    def find_row_number_by_id(self, record_id: str) -> int:
+        """
+        Returns the 1-based row number for the given booking ID.
+        """
+        column = self.sheet.col_values(1)  # column A = id column
+        for i, cell in enumerate(column, start=1):
+            if cell == record_id:
+                return i
+        raise ValueError(f"Booking with ID {record_id} not found.")
         
     def _generate_next_id(self) -> str:
         existing_ids = self.sheet.col_values(1)[1:]  # skip header
